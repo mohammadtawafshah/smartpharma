@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import { useMedicationNotifications } from './hooks/useMedicationNotifications'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 
@@ -63,6 +64,9 @@ function AdminRoute({ children }) {
 }
 
 export default function App() {
+  const { user } = useAuth()
+  useMedicationNotifications(user)
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar/>

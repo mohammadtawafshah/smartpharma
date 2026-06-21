@@ -8,8 +8,8 @@ const EMPTY = {
   drug_name:'', generic_name:'', brand_names:'', drug_class:'', drug_form:'',
   strength:'', route:'Oral', rx_otc:'OTC', pregnancy_category:'B',
   alcohol_interaction:0, hypertension_risk:0,
-  description:'', mechanism_of_action:'', side_effects:'',
-  contraindications:'', dosage_info:'', storage_info:'', is_active:1
+  indications:'', mechanism_of_action:'', side_effects:'',
+  contraindications:'', dosage_info:'', warnings:'', is_active:1
 }
 
 export default function AdminDrugFormPage() {
@@ -137,12 +137,12 @@ export default function AdminDrugFormPage() {
           <h2 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-emerald-600">Medical Details</h2>
           <div className="space-y-4">
             {[
-              ['description','Description / Indications','Describe what this drug is used for...'],
+              ['indications','Indications / Uses','What is this drug used for?'],
               ['mechanism_of_action','Mechanism of Action','How does this drug work?'],
               ['side_effects','Side Effects','List common and serious side effects...'],
               ['contraindications','Contraindications','When should this drug NOT be used?'],
               ['dosage_info','Dosage Information','Standard dosage guidelines...'],
-              ['storage_info','Storage Instructions','How to store this medication?'],
+              ['warnings','Warnings','Important safety warnings...'],
             ].map(([key,label,placeholder]) => (
               <div key={key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>

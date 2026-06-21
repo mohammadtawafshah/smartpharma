@@ -58,7 +58,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-6 text-xs text-gray-500 text-center">
-          © {new Date().getFullYear()} SmartPharma Guide · Arab American University · Computer Science Senior Project
+          © {new Date().getFullYear()} SmartPharma Guide
         </div>
       </div>
     </footer>

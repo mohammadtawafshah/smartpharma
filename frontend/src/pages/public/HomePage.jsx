@@ -5,8 +5,10 @@ import { GiMedicines, GiHerbsBundle } from 'react-icons/gi'
 import { mockDrugs, mockHerbs } from '../../utils/mockData'
 import DrugCard from '../../components/common/DrugCard'
 import HerbCard from '../../components/common/HerbCard'
+import { useAuth } from '../../context/AuthContext'
 
 export default function HomePage() {
+  const { user } = useAuth()
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
 
@@ -152,7 +154,7 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA BANNER ── */}
-      <section className="bg-primary-900 text-white py-16">
+      {!user && <section className="bg-primary-900 text-white py-16">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-3">Get Personalised Safety Alerts</h2>
           <p className="text-primary-200 mb-8 text-lg">
@@ -167,7 +169,7 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </section>
+      </section>}
     </div>
   )
 }

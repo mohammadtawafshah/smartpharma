@@ -6,10 +6,9 @@ import { GiHerbsBundle } from 'react-icons/gi'
 
 const EMPTY = {
   herb_name:'', scientific_name:'', common_names:'', family:'', parts_used:'',
-  origin:'', description:'', traditional_uses:'', preparation_method:'',
-  extraction_method:'', side_effects:'', contraindications:'',
-  pregnancy_safe:1, hypertension_risk:0, evidence_level:'traditional',
-  toxicity_level:'low', is_active:1
+  origin_region:'', benefits:'', uses:'', preparation_methods:'',
+  extraction_methods:'', side_effects:'', contraindications:'',
+  pregnancy_safe:1, hypertension_risk:0, is_active:1
 }
 
 export default function AdminHerbFormPage() {
@@ -70,22 +69,13 @@ export default function AdminHerbFormPage() {
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Parts Used</label>
               <input value={form.parts_used} onChange={e => set('parts_used',e.target.value)} className="input" placeholder="e.g. Root/Rhizome"/></div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
-              <input value={form.origin} onChange={e => set('origin',e.target.value)} className="input" placeholder="e.g. South Asia"/></div>
+              <input value={form.origin_region} onChange={e => set('origin_region',e.target.value)} className="input" placeholder="e.g. South Asia"/></div>
           </div>
         </div>
 
         <div className="card">
-          <h2 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-amber-600">Safety & Evidence</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Evidence Level</label>
-              <select value={form.evidence_level} onChange={e => set('evidence_level',e.target.value)} className="input">
-                <option value="high">High</option><option value="moderate">Moderate</option>
-                <option value="low">Low</option><option value="traditional">Traditional</option>
-              </select></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Toxicity Level</label>
-              <select value={form.toxicity_level} onChange={e => set('toxicity_level',e.target.value)} className="input">
-                <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
-              </select></div>
+          <h2 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-amber-600">Safety</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3 pt-1">
               <div className="flex items-center gap-3 pt-5">
                 <input type="checkbox" id="preg" checked={!!form.pregnancy_safe} onChange={e => set('pregnancy_safe',e.target.checked?1:0)} className="w-4 h-4"/>
@@ -103,10 +93,10 @@ export default function AdminHerbFormPage() {
           <h2 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-primary-600">Details</h2>
           <div className="space-y-4">
             {[
-              ['description','Description'],
-              ['traditional_uses','Traditional Uses'],
-              ['preparation_method','Preparation Method'],
-              ['extraction_method','Extraction Method'],
+              ['benefits','Benefits'],
+              ['uses','Traditional Uses / Uses'],
+              ['preparation_methods','Preparation Methods'],
+              ['extraction_methods','Extraction Methods'],
               ['side_effects','Side Effects'],
               ['contraindications','Contraindications'],
             ].map(([key,label]) => (

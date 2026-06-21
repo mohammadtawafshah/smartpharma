@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { FiArrowLeft, FiAlertTriangle, FiHeart, FiCheck } from 'react-icons/fi'
+import { FiArrowLeft, FiAlertTriangle, FiHeart, FiCheck, FiClock } from 'react-icons/fi'
 import { GiHerbsBundle } from 'react-icons/gi'
 import api from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import MedicationScheduleModal from '../../components/common/MedicationScheduleModal'
 
 export default function HerbDetailPage() {
   const { id }   = useParams()
   const { user } = useAuth()
 
-  const [herb,     setHerb]    = useState(null)
-  const [fav,      setFav]     = useState(false)
-  const [loading,  setLoading] = useState(true)
-  const [notFound, setNotFound]= useState(false)
+  const [herb,         setHerb]         = useState(null)
+  const [fav,          setFav]          = useState(false)
+  const [loading,      setLoading]      = useState(true)
+  const [notFound,     setNotFound]     = useState(false)
+  const [showSchedule, setShowSchedule] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -64,10 +66,16 @@ export default function HerbDetailPage() {
             </div>
           </div>
           {user && (
-            <button onClick={toggleFav}
-              className={`flex items-center gap-2 transition-colors flex-shrink-0 text-sm ${fav ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}>
-              <FiHeart size={18} className={fav ? 'fill-current' : ''}/> {fav ? 'Saved' : 'Save'}
-            </button>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <button onClick={toggleFav}
+                className={`flex items-center gap-2 transition-colors text-sm ${fav ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}>
+                <FiHeart size={18} className={fav ? 'fill-current' : ''}/> {fav ? 'Saved' : 'Save'}
+              </button>
+              <button onClick={() => setShowSchedule(true)}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                <FiClock size={15}/> Start Taking
+              </button>
+            </div>
           )}
         </div>
 
@@ -207,9 +215,35 @@ export default function HerbDetailPage() {
         </div>
       )}
 
+      {user && (
+        <div className="mt-8 card bg-emerald-50 border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl flex-shrink-0">
+              <FiClock size={20}/>
+            </div>
+            <div>
+              <p className="font-semibold text-emerald-900 text-sm">Set Herb Reminders</p>
+              <p className="text-emerald-700 text-xs mt-0.5">Schedule daily reminders to take {herb.herb_name} — we'll notify you in My Alerts.</p>
+            </div>
+          </div>
+          <button onClick={() => setShowSchedule(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors whitespace-nowrap flex-shrink-0">
+            <FiClock size={14} className="inline mr-1.5"/> Start Taking
+          </button>
+        </div>
+      )}
+
       <p className="text-xs text-gray-400 mt-6 text-center">
         * Information provided for educational purposes only. Always consult a qualified healthcare professional before using any herbal product.
       </p>
+
+      {showSchedule && herb && (
+        <MedicationScheduleModal
+          item={herb}
+          itemType="herb"
+          onClose={() => setShowSchedule(false)}
+        />
+      )}
     </div>
   )
 }

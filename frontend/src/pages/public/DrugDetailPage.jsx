@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { FiArrowLeft, FiAlertTriangle, FiHeart, FiCheck } from 'react-icons/fi'
+import { FiArrowLeft, FiAlertTriangle, FiHeart, FiCheck, FiClock } from 'react-icons/fi'
 import { GiMedicines, GiHerbsBundle } from 'react-icons/gi'
 import api from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import MedicationScheduleModal from '../../components/common/MedicationScheduleModal'
 
 const pregnancyDesc = {
   A: 'Adequate studies show no risk to the fetus.',
@@ -24,11 +25,12 @@ export default function DrugDetailPage() {
   const { id }   = useParams()
   const { user } = useAuth()
 
-  const [drug,      setDrug]      = useState(null)
-  const [alerts,    setAlerts]    = useState([])
-  const [fav,       setFav]       = useState(false)
-  const [loading,   setLoading]   = useState(true)
-  const [notFound,  setNotFound]  = useState(false)
+  const [drug,         setDrug]         = useState(null)
+  const [alerts,       setAlerts]       = useState([])
+  const [fav,          setFav]          = useState(false)
+  const [loading,      setLoading]      = useState(true)
+  const [notFound,     setNotFound]     = useState(false)
+  const [showSchedule, setShowSchedule] = useState(false)
 
   // Fetch drug
   useEffect(() => {
@@ -121,10 +123,16 @@ export default function DrugDetailPage() {
             </div>
           </div>
           {user && (
-            <button onClick={toggleFav}
-              className={`flex items-center gap-2 transition-colors self-start text-sm ${fav ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}>
-              <FiHeart size={20} className={fav ? 'fill-current' : ''}/> {fav ? 'Saved' : 'Save'}
-            </button>
+            <div className="flex items-center gap-3 self-start">
+              <button onClick={toggleFav}
+                className={`flex items-center gap-2 transition-colors text-sm ${fav ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}>
+                <FiHeart size={20} className={fav ? 'fill-current' : ''}/> {fav ? 'Saved' : 'Save'}
+              </button>
+              <button onClick={() => setShowSchedule(true)}
+                className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                <FiClock size={15}/> Start Taking
+              </button>
+            </div>
           )}
         </div>
 
@@ -272,6 +280,33 @@ export default function DrugDetailPage() {
           <FiCheck className="text-green-500 flex-shrink-0" size={20}/>
           <p className="text-green-800 text-sm font-medium">No known drug–herb interactions recorded for this medication.</p>
         </div>
+      )}
+
+      {/* Medication schedule CTA for logged-in users */}
+      {user && (
+        <div className="mt-8 card bg-primary-50 border-primary-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary-100 text-primary-600 p-2.5 rounded-xl flex-shrink-0">
+              <FiClock size={20}/>
+            </div>
+            <div>
+              <p className="font-semibold text-primary-900 text-sm">Set Medication Reminders</p>
+              <p className="text-primary-700 text-xs mt-0.5">Schedule daily reminders to take {drug.drug_name} — we'll notify you in My Alerts.</p>
+            </div>
+          </div>
+          <button onClick={() => setShowSchedule(true)}
+            className="btn-primary text-sm py-2 px-5 whitespace-nowrap flex-shrink-0">
+            <FiClock size={14} className="inline mr-1.5"/> Start Taking
+          </button>
+        </div>
+      )}
+
+      {showSchedule && drug && (
+        <MedicationScheduleModal
+          item={drug}
+          itemType="drug"
+          onClose={() => setShowSchedule(false)}
+        />
       )}
     </div>
   )

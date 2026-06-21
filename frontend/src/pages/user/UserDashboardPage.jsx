@@ -23,7 +23,7 @@ export default function UserDashboardPage() {
   const favoriteCount  = data?.favorite_count  ?? 0
   const alertCount     = data?.alert_count     ?? 0
   const historyCount   = data?.history_count   ?? 0
-  const recentSearches = data?.recent_searches ?? []
+  const recentSearches = (data?.recent_searches ?? []).filter(s => s && s.length >= 3)
   const recentDrugs    = data?.recent_drugs    ?? []
   const recentHerbs    = data?.recent_herbs    ?? []
 

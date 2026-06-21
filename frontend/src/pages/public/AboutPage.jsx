@@ -10,8 +10,7 @@ export default function AboutPage() {
         </div>
         <h1 className="text-4xl font-bold text-gray-900 mb-4">About SmartPharma Guide</h1>
         <p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">
-          A senior project developed at Arab American University — a smart educational web platform
-          bridging pharmaceutical knowledge and herbal medicine.
+          A smart educational web platform bridging pharmaceutical knowledge and herbal medicine.
         </p>
       </div>
 
@@ -66,7 +65,7 @@ export default function AboutPage() {
         </div>
         <div className="text-center mt-6 pt-6 border-t border-gray-100 text-sm text-gray-500">
           <p><strong>Supervisor:</strong> Mohammad Aodah</p>
-          <p className="mt-1">Arab American University · Computer Science · Senior Project 2025/2026</p>
+
         </div>
       </div>
     </div>

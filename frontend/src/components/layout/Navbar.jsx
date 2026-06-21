@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import api from '../../services/api'
 import {
   FiSearch, FiMenu, FiX, FiUser, FiLogOut,
-  FiHeart, FiBell, FiShield
+  FiHeart, FiBell, FiShield, FiClock
 } from 'react-icons/fi'
 import { GiMedicines } from 'react-icons/gi'
 
@@ -11,26 +12,69 @@ export default function Navbar() {
   const { user, logout, isAdmin } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
-  const [query, setQuery]       = useState('')
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [dropOpen, setDropOpen] = useState(false)
+  const [query, setQuery]             = useState('')
+  const [menuOpen, setMenuOpen]       = useState(false)
+  const [dropOpen, setDropOpen]       = useState(false)
+  const [suggestions, setSuggestions] = useState([])
+  const [showSug, setShowSug]         = useState(false)
+  const [history, setHistory]         = useState([])
+  const searchRef = useRef(null)
 
-  useEffect(() => { setDropOpen(false) }, [location.pathname])
+  useEffect(() => { setDropOpen(false); setShowSug(false) }, [location.pathname])
 
   useEffect(() => {
     function handleClickOutside(e) {
       if (!e.target.closest('#user-dropdown')) setDropOpen(false)
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowSug(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  async function fetchHistory() {
+    if (!user) return
+    if (history.length > 0) return
+    try {
+      const res = await api.get('/history?page=1')
+      const terms = (res.data?.data || []).map(r => r.keyword).filter(k => k && k.length >= 2)
+      const unique = [...new Set(terms)].slice(0, 20)
+      setHistory(unique)
+      setSuggestions(unique.slice(0, 6))
+    } catch {}
+  }
+
+  function handleFocus() {
+    if (!user) return
+    fetchHistory()
+    setShowSug(true)
+    setSuggestions(history.slice(0, 6))
+  }
+
+  function handleQueryChange(e) {
+    const val = e.target.value
+    setQuery(val)
+    if (!val.trim()) {
+      setSuggestions(history.slice(0, 6))
+    } else {
+      const filtered = history.filter(h => h.toLowerCase().includes(val.toLowerCase()))
+      setSuggestions(filtered.slice(0, 6))
+    }
+    setShowSug(true)
+  }
+
   function handleSearch(e) {
     e.preventDefault()
     if (query.trim().length < 2) return
+    setShowSug(false)
     navigate(`/search?q=${encodeURIComponent(query.trim())}`)
     setQuery('')
     setMenuOpen(false)
+  }
+
+  function pickSuggestion(term) {
+    setShowSug(false)
+    setQuery('')
+    navigate(`/search?q=${encodeURIComponent(term)}`)
   }
 
   function handleLogout() {
@@ -58,15 +102,34 @@ export default function Navbar() {
           </Link>
 
           {/* Search bar — desktop */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl" ref={searchRef}>
             <div className="relative w-full">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 value={query}
-                onChange={e => setQuery(e.target.value)}
+                onChange={handleQueryChange}
+                onFocus={handleFocus}
                 placeholder="Search drugs, herbs, conditions..."
                 className="input pl-10 pr-4 py-2 text-sm bg-gray-50"
+                autoComplete="off"
               />
+              {/* Suggestions dropdown */}
+              {showSug && suggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  <p className="px-3 pt-2 pb-1 text-[11px] text-gray-400 font-medium uppercase tracking-wide">Recent Searches</p>
+                  {suggestions.map((term, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onMouseDown={() => pickSuggestion(term)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 text-left transition-colors"
+                    >
+                      <FiClock size={13} className="text-gray-400 flex-shrink-0"/>
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </form>
 
