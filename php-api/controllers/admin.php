@@ -24,8 +24,8 @@ function adminSaveDrug(array $data, ?int $id = null): void {
     $db = DB::get();
     $fields = ['drug_name','generic_name','brand_names','drug_class','drug_form','strength','route',
                'rx_otc','pregnancy_category','alcohol_interaction','hypertension_risk',
-               'description','mechanism_of_action','side_effects','contraindications',
-               'dosage_info','storage_info','is_active'];
+               'indications','mechanism_of_action','side_effects','contraindications',
+               'dosage_info','warnings','is_active'];
     $set = []; $params = [];
     foreach ($fields as $f) {
         if (array_key_exists($f, $data)) { $set[] = "$f=?"; $params[] = $data[$f]; }

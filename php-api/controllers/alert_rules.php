@@ -1,47 +1,55 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
 
+// DB columns: id, rule_name, condition_field, condition_value, severity, message_en, message_ar, is_active, created_at
+// Frontend expects: id, condition_key, alert_type, message_template, is_active
+
+function mapRuleToFrontend(array $r): array {
+    return [
+        'id'               => (int)$r['id'],
+        'condition_key'    => $r['condition_field'] ?? $r['condition_key'] ?? '',
+        'alert_type'       => $r['severity']        ?? $r['alert_type']   ?? 'warning',
+        'message_template' => $r['message_en']      ?? $r['message_template'] ?? '',
+        'is_active'        => (bool)$r['is_active'],
+        'created_at'       => $r['created_at'] ?? '',
+    ];
+}
+
 function getAlertRules(): void {
     $db = DB::get();
-    // Make sure table exists
-    $db->exec("CREATE TABLE IF NOT EXISTS alert_rules (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        condition_key VARCHAR(50) NOT NULL,
-        alert_type ENUM('danger','warning','info') NOT NULL DEFAULT 'warning',
-        message_template TEXT NOT NULL,
-        is_active TINYINT(1) NOT NULL DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-    $rules = $db->query('SELECT * FROM alert_rules ORDER BY condition_key, alert_type')->fetchAll();
-    foreach ($rules as &$r) {
-        $r['id']        = (int)$r['id'];
-        $r['is_active'] = (bool)$r['is_active'];
-    }
-    echo json_encode($rules);
+    $rules = $db->query('SELECT * FROM alert_rules ORDER BY condition_field, severity')->fetchAll();
+    echo json_encode(array_map('mapRuleToFrontend', $rules));
 }
 
 function saveAlertRule(array $body, ?int $id = null): void {
     $db = DB::get();
-    $conditionKey    = trim($body['condition_key']    ?? '');
-    $alertType       = in_array($body['alert_type'] ?? '', ['danger','warning','info']) ? $body['alert_type'] : 'warning';
-    $messageTemplate = trim($body['message_template'] ?? '');
+
+    $conditionField  = trim($body['condition_key']      ?? $body['condition_field']  ?? '');
+    $severity        = in_array($body['alert_type'] ?? $body['severity'] ?? '', ['danger','warning','info'])
+                        ? ($body['alert_type'] ?? $body['severity'])
+                        : 'warning';
+    $messageEn       = trim($body['message_template']   ?? $body['message_en']       ?? '');
     $isActive        = isset($body['is_active']) ? (int)(bool)$body['is_active'] : 1;
 
-    if (!$conditionKey || !$messageTemplate) {
+    if (!$conditionField || !$messageEn) {
         http_response_code(422);
         echo json_encode(['error' => 'condition_key and message_template are required']);
         return;
     }
 
+    $ruleName = ucfirst(str_replace('_', ' ', $conditionField)) . ' ' . ucfirst($severity);
+
     if ($id) {
-        $stmt = $db->prepare('UPDATE alert_rules SET condition_key=?, alert_type=?, message_template=?, is_active=? WHERE id=?');
-        $stmt->execute([$conditionKey, $alertType, $messageTemplate, $isActive, $id]);
+        $stmt = $db->prepare(
+            'UPDATE alert_rules SET rule_name=?, condition_field=?, severity=?, message_en=?, is_active=? WHERE id=?'
+        );
+        $stmt->execute([$ruleName, $conditionField, $severity, $messageEn, $isActive, $id]);
         echo json_encode(['message' => 'Alert rule updated', 'id' => $id]);
     } else {
-        $stmt = $db->prepare('INSERT INTO alert_rules (condition_key, alert_type, message_template, is_active) VALUES (?,?,?,?)');
-        $stmt->execute([$conditionKey, $alertType, $messageTemplate, $isActive]);
+        $stmt = $db->prepare(
+            'INSERT INTO alert_rules (rule_name, condition_field, condition_value, severity, message_en, is_active) VALUES (?,?,?,?,?,?)'
+        );
+        $stmt->execute([$ruleName, $conditionField, '1', $severity, $messageEn, $isActive]);
         echo json_encode(['message' => 'Alert rule created', 'id' => (int)$db->lastInsertId()]);
     }
 }

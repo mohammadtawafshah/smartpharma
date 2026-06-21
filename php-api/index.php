@@ -91,6 +91,16 @@ try {
         if ($method==='DELETE') { clearSearchHistory($user); exit; }
     }
 
+    // ── MEDICATION SCHEDULES ─────────────────────────────────
+    if ($parts[0] === 'schedules') {
+        require_once __DIR__ . '/controllers/schedules.php';
+        $user = requireAuth();
+        if ($method==='GET'    && ($parts[1]??'')==='due')      { getDueSchedules($user); exit; }
+        if ($method==='GET'    && empty($parts[1]))              { getSchedules($user); exit; }
+        if ($method==='POST')                                    { createSchedule($user, $body()); exit; }
+        if ($method==='DELETE' && is_numeric($parts[1]))         { deleteSchedule($user, (int)$parts[1]); exit; }
+    }
+
     // ── ADMIN ────────────────────────────────────────────────
     if ($parts[0] === 'admin') {
         require_once __DIR__ . '/controllers/admin.php';

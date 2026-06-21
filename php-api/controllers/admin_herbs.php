@@ -3,10 +3,10 @@ require_once __DIR__ . '/../config/db.php';
 
 function adminSaveHerb(array $data, ?int $id = null): void {
     $db = DB::get();
-    $fields = ['herb_name','scientific_name','common_names','family','parts_used','origin',
-               'description','traditional_uses','preparation_method','extraction_method',
+    $fields = ['herb_name','scientific_name','common_names','family','parts_used','origin_region',
+               'benefits','uses','preparation_methods','extraction_methods',
                'side_effects','contraindications','pregnancy_safe','hypertension_risk',
-               'evidence_level','toxicity_level','is_active'];
+               'is_active'];
     $set = []; $params = [];
     foreach ($fields as $f) {
         if (array_key_exists($f, $data)) { $set[] = "$f=?"; $params[] = $data[$f]; }
