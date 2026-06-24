@@ -73,5 +73,15 @@ function getHerb(int $id): void {
     $stmt->execute([$id]);
     $herb['drug_interactions'] = $stmt->fetchAll();
 
+    // Drug alternatives (herbs are used instead of these drugs)
+    $stmt = $db->prepare(
+        'SELECT d.id AS drug_id, d.drug_name, d.generic_name
+         FROM herbal_alternatives ha
+         JOIN drugs d ON d.id = ha.drug_id
+         WHERE ha.herb_id = ?'
+    );
+    $stmt->execute([$id]);
+    $herb['drug_alternatives'] = $stmt->fetchAll();
+
     echo json_encode($herb);
 }

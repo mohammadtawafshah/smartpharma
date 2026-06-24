@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import api from '../../services/api'
-import { FiArrowLeft, FiSave } from 'react-icons/fi'
-import { GiMedicines } from 'react-icons/gi'
+import { FiArrowLeft, FiSave, FiX } from 'react-icons/fi'
+import { GiMedicines, GiHerbsBundle } from 'react-icons/gi'
 
 const EMPTY = {
   drug_name:'', generic_name:'', brand_names:'', drug_class:'', drug_form:'',
@@ -20,28 +20,54 @@ export default function AdminDrugFormPage() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [herbs, setHerbs] = useState([])
+  const [selectedHerbs, setSelectedHerbs] = useState([])
+  const [herbSearch, setHerbSearch] = useState('')
 
   useEffect(() => {
+    api.get('/admin/herbs-list').then(r => setHerbs(r.data)).catch(() => {})
     if (isEdit) {
       setLoading(true)
-      api.get(`/drugs/${id}`).then(r => setForm({ ...EMPTY, ...r.data })).catch(() => {}).finally(() => setLoading(false))
+      Promise.all([
+        api.get(`/drugs/${id}`),
+        api.get(`/admin/alternatives/drug/${id}`)
+      ]).then(([drugRes, altRes]) => {
+        setForm({ ...EMPTY, ...drugRes.data })
+        setSelectedHerbs(altRes.data || [])
+      }).catch(() => {}).finally(() => setLoading(false))
     }
   }, [id])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const toggleHerb = (herbId) => {
+    setSelectedHerbs(prev =>
+      prev.includes(herbId) ? prev.filter(h => h !== herbId) : [...prev, herbId]
+    )
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setSaving(true)
     try {
-      if (isEdit) await api.put(`/admin/drugs/${id}`, form)
-      else        await api.post('/admin/drugs', form)
+      let drugId = id
+      if (isEdit) {
+        await api.put(`/admin/drugs/${id}`, form)
+      } else {
+        const res = await api.post('/admin/drugs', form)
+        drugId = res.data.id
+      }
+      await api.post(`/admin/alternatives/drug/${drugId}`, { herb_ids: selectedHerbs })
       navigate('/admin/drugs')
     } catch (err) {
       setError(err.response?.data?.error || 'Save failed')
     } finally { setSaving(false) }
   }
+
+  const filteredHerbs = herbs.filter(h =>
+    h.herb_name.toLowerCase().includes(herbSearch.toLowerCase())
+  )
 
   if (loading) return <div className="flex justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"/></div>
 
@@ -150,6 +176,59 @@ export default function AdminDrugFormPage() {
                   placeholder={placeholder} className="input resize-none"/>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Herbal Alternatives */}
+        <div className="card">
+          <h2 className="font-bold text-gray-900 mb-1 text-sm uppercase tracking-wide text-emerald-600 flex items-center gap-2">
+            <GiHerbsBundle size={16}/> Possible Herbal Alternatives
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">Select herbs that can be used as natural alternatives to this drug</p>
+
+          {/* Selected herbs chips */}
+          {selectedHerbs.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedHerbs.map(hid => {
+                const herb = herbs.find(h => h.id === hid || +h.id === +hid)
+                if (!herb) return null
+                return (
+                  <span key={hid} className="flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs px-3 py-1 rounded-full font-medium">
+                    {herb.herb_name}
+                    <button type="button" onClick={() => toggleHerb(+hid)} className="hover:text-emerald-900">
+                      <FiX size={12}/>
+                    </button>
+                  </span>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Search + list */}
+          <input
+            type="text"
+            placeholder="Search herbs..."
+            value={herbSearch}
+            onChange={e => setHerbSearch(e.target.value)}
+            className="input mb-3 text-sm"
+          />
+          <div className="max-h-48 overflow-y-auto border border-gray-100 rounded-lg divide-y divide-gray-50">
+            {filteredHerbs.length === 0 ? (
+              <p className="text-center py-4 text-gray-400 text-sm">No herbs found</p>
+            ) : filteredHerbs.map(herb => {
+              const selected = selectedHerbs.includes(+herb.id)
+              return (
+                <label key={herb.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors ${selected ? 'bg-emerald-50' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => toggleHerb(+herb.id)}
+                    className="w-4 h-4 accent-emerald-600"
+                  />
+                  <span className="text-sm text-gray-800">{herb.herb_name}</span>
+                </label>
+              )
+            })}
           </div>
         </div>
 

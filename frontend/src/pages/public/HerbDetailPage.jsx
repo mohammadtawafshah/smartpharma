@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { FiArrowLeft, FiAlertTriangle, FiHeart, FiCheck, FiClock } from 'react-icons/fi'
-import { GiHerbsBundle } from 'react-icons/gi'
+import { GiHerbsBundle, GiMedicines } from 'react-icons/gi'
 import api from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 import MedicationScheduleModal from '../../components/common/MedicationScheduleModal'
@@ -45,6 +45,7 @@ export default function HerbDetailPage() {
   )
 
   const interactions = herb.drug_interactions || []
+  const drugAlternatives = herb.drug_alternatives || []
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
@@ -230,6 +231,30 @@ export default function HerbDetailPage() {
             className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors whitespace-nowrap flex-shrink-0">
             <FiClock size={14} className="inline mr-1.5"/> Start Taking
           </button>
+        </div>
+      )}
+
+      {/* Drug Alternatives */}
+      {drugAlternatives.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-4">
+            <GiMedicines className="text-primary-600" size={22}/> Possible Drug Alternatives
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {drugAlternatives.map((drug, i) => (
+              <Link key={i} to={`/drugs/${drug.drug_id}`}
+                className="card hover:shadow-md transition-shadow flex items-center gap-3 p-4">
+                <div className="bg-primary-100 text-primary-600 p-2 rounded-xl flex-shrink-0">
+                  <GiMedicines size={18}/>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">{drug.drug_name}</p>
+                  {drug.generic_name && <p className="text-xs text-gray-500">{drug.generic_name}</p>}
+                </div>
+              </Link>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-3">* Drug alternatives are for educational purposes only. Consult a qualified doctor before switching medications.</p>
         </div>
       )}
 

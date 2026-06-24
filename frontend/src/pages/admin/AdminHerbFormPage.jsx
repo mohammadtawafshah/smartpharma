@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import api from '../../services/api'
-import { FiArrowLeft, FiSave } from 'react-icons/fi'
-import { GiHerbsBundle } from 'react-icons/gi'
+import { FiArrowLeft, FiSave, FiX } from 'react-icons/fi'
+import { GiHerbsBundle, GiMedicines } from 'react-icons/gi'
 
 const EMPTY = {
   herb_name:'', scientific_name:'', common_names:'', family:'', parts_used:'',
@@ -19,25 +19,51 @@ export default function AdminHerbFormPage() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving]   = useState(false)
   const [error, setError]     = useState('')
+  const [drugs, setDrugs] = useState([])
+  const [selectedDrugs, setSelectedDrugs] = useState([])
+  const [drugSearch, setDrugSearch] = useState('')
 
   useEffect(() => {
+    api.get('/admin/drugs-list').then(r => setDrugs(r.data)).catch(() => {})
     if (isEdit) {
       setLoading(true)
-      api.get(`/herbs/${id}`).then(r => setForm({ ...EMPTY, ...r.data })).catch(() => {}).finally(() => setLoading(false))
+      Promise.all([
+        api.get(`/herbs/${id}`),
+        api.get(`/admin/alternatives/herb/${id}`)
+      ]).then(([herbRes, altRes]) => {
+        setForm({ ...EMPTY, ...herbRes.data })
+        setSelectedDrugs(altRes.data || [])
+      }).catch(() => {}).finally(() => setLoading(false))
     }
   }, [id])
 
   const set = (k,v) => setForm(f => ({ ...f, [k]:v }))
 
+  const toggleDrug = (drugId) => {
+    setSelectedDrugs(prev =>
+      prev.includes(drugId) ? prev.filter(d => d !== drugId) : [...prev, drugId]
+    )
+  }
+
   async function handleSubmit(e) {
     e.preventDefault(); setError(''); setSaving(true)
     try {
-      if (isEdit) await api.put(`/admin/herbs/${id}`, form)
-      else        await api.post('/admin/herbs', form)
+      let herbId = id
+      if (isEdit) {
+        await api.put(`/admin/herbs/${id}`, form)
+      } else {
+        const res = await api.post('/admin/herbs', form)
+        herbId = res.data.id
+      }
+      await api.post(`/admin/alternatives/herb/${herbId}`, { drug_ids: selectedDrugs })
       navigate('/admin/herbs')
     } catch (err) { setError(err.response?.data?.error || 'Save failed') }
     finally { setSaving(false) }
   }
+
+  const filteredDrugs = drugs.filter(d =>
+    d.drug_name.toLowerCase().includes(drugSearch.toLowerCase())
+  )
 
   if (loading) return <div className="flex justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"/></div>
 
@@ -76,15 +102,13 @@ export default function AdminHerbFormPage() {
         <div className="card">
           <h2 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-amber-600">Safety</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3 pt-1">
-              <div className="flex items-center gap-3 pt-5">
-                <input type="checkbox" id="preg" checked={!!form.pregnancy_safe} onChange={e => set('pregnancy_safe',e.target.checked?1:0)} className="w-4 h-4"/>
-                <label htmlFor="preg" className="text-sm font-medium text-gray-700">Generally Safe in Pregnancy</label>
-              </div>
-              <div className="flex items-center gap-3">
-                <input type="checkbox" id="htn" checked={!!form.hypertension_risk} onChange={e => set('hypertension_risk',e.target.checked?1:0)} className="w-4 h-4"/>
-                <label htmlFor="htn" className="text-sm font-medium text-gray-700">Hypertension Risk</label>
-              </div>
+            <div className="flex items-center gap-3 pt-1">
+              <input type="checkbox" id="preg" checked={!!form.pregnancy_safe} onChange={e => set('pregnancy_safe',e.target.checked?1:0)} className="w-4 h-4"/>
+              <label htmlFor="preg" className="text-sm font-medium text-gray-700">Generally Safe in Pregnancy</label>
+            </div>
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="htn" checked={!!form.hypertension_risk} onChange={e => set('hypertension_risk',e.target.checked?1:0)} className="w-4 h-4"/>
+              <label htmlFor="htn" className="text-sm font-medium text-gray-700">Hypertension Risk</label>
             </div>
           </div>
         </div>
@@ -105,6 +129,57 @@ export default function AdminHerbFormPage() {
                 <textarea rows={3} value={form[key]||''} onChange={e => set(key,e.target.value)} className="input resize-none"/>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Drug Alternatives */}
+        <div className="card">
+          <h2 className="font-bold text-gray-900 mb-1 text-sm uppercase tracking-wide text-primary-600 flex items-center gap-2">
+            <GiMedicines size={16}/> Alternative To (Drugs)
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">Select drugs that this herb can be used as a natural alternative for</p>
+
+          {selectedDrugs.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedDrugs.map(did => {
+                const drug = drugs.find(d => +d.id === +did)
+                if (!drug) return null
+                return (
+                  <span key={did} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">
+                    {drug.drug_name}
+                    <button type="button" onClick={() => toggleDrug(+did)} className="hover:text-blue-900">
+                      <FiX size={12}/>
+                    </button>
+                  </span>
+                )
+              })}
+            </div>
+          )}
+
+          <input
+            type="text"
+            placeholder="Search drugs..."
+            value={drugSearch}
+            onChange={e => setDrugSearch(e.target.value)}
+            className="input mb-3 text-sm"
+          />
+          <div className="max-h-48 overflow-y-auto border border-gray-100 rounded-lg divide-y divide-gray-50">
+            {filteredDrugs.length === 0 ? (
+              <p className="text-center py-4 text-gray-400 text-sm">No drugs found</p>
+            ) : filteredDrugs.map(drug => {
+              const selected = selectedDrugs.includes(+drug.id)
+              return (
+                <label key={drug.id} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors ${selected ? 'bg-blue-50' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => toggleDrug(+drug.id)}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                  <span className="text-sm text-gray-800">{drug.drug_name}</span>
+                </label>
+              )
+            })}
           </div>
         </div>
 

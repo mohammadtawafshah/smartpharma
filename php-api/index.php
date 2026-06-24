@@ -165,6 +165,15 @@ try {
             $rows = DB::get()->query('SELECT id, herb_name FROM herbs WHERE is_active=1 ORDER BY herb_name')->fetchAll();
             echo json_encode($rows); exit;
         }
+
+        // Herbal Alternatives
+        if ($parts[1]==='alternatives') {
+            require_once __DIR__ . '/controllers/alternatives.php';
+            if ($method==='GET'    && $parts[2]==='drug' && is_numeric($parts[3])) { getAlternativesForDrug((int)$parts[3]); exit; }
+            if ($method==='GET'    && $parts[2]==='herb' && is_numeric($parts[3])) { getAlternativesForHerb((int)$parts[3]); exit; }
+            if ($method==='POST'   && $parts[2]==='drug' && is_numeric($parts[3])) { setAlternativesForDrug((int)$parts[3], $body()); exit; }
+            if ($method==='POST'   && $parts[2]==='herb' && is_numeric($parts[3])) { setAlternativesForHerb((int)$parts[3], $body()); exit; }
+        }
     }
 
     http_response_code(404);
